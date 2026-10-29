@@ -18,17 +18,6 @@ import {
   hasTextToSpeechVoices,
 } from '@/utils/TextToSpeech';
 
-// Some react-typist declarations omit or mis-type delayGenerator.
-// Keep all existing props and supply the signature used by this component.
-type GuideTypistProps = Omit<
-  React.ComponentProps<typeof Typist>,
-  'delayGenerator'
-> & {
-  delayGenerator: () => number;
-};
-
-const GuideTypist = Typist as unknown as React.ComponentType<GuideTypistProps>;
-
 export const stopTypingSounds = () => {
   const state = getState();
   if (state.guideTypingTimer) {
@@ -59,8 +48,6 @@ const GUIDE_ARROW_CLASS: Record<string, string> = {
 };
 
 class Guide extends React.Component<Record<string, never>> {
-  fastTyping = false;
-
   guideDialogRef = React.createRef<HTMLDivElement>();
   lastFocusedGuideId: string | null = null;
 
@@ -75,21 +62,20 @@ class Guide extends React.Component<Record<string, never>> {
       this.guideDialogRef &&
       this.guideDialogRef.current
     ) {
-    // `focusVisible` is a non-standard option (Firefox extension) accepted
-    // by some browsers; cast since it isn't in lib.dom's FocusOptions.
+      // `focusVisible` is a non-standard option (Firefox extension) accepted
+      // by some browsers; cast since it isn't in lib.dom's FocusOptions.
       this.guideDialogRef.current.focus({focusVisible: false} as FocusOptions);
       this.lastFocusedGuideId = currentGuideId;
     } else if (!currentGuide) {
       this.lastFocusedGuideId = null;
     }
   }
-  onTypingDone = () => {
-    this.fastTyping = false;
+  onTypingDone() {
     clearInterval(
       getState().guideTypingTimer as ReturnType<typeof setInterval>,
     );
     setState({guideShowing: true, guideTypingTimer: undefined});
-  };
+  }
 
   onGuideKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === ' ' || e.key === 'Enter' || e.key === 'Spacebar') {
@@ -102,13 +88,8 @@ class Guide extends React.Component<Record<string, never>> {
     const state = getState();
     const currentGuide = guide.getCurrentGuide();
 
-    if (currentGuide && !state.guideShowing) {
-      this.fastTyping = true;
-      return;
-    }
-
     if (this.attemptTextToSpeechTextToSpeech(true)) {
-    // This click started text to speech.
+      // This click started text to speech.
       setState(
         {
           hasTextToSpeechStartedByClick: true,
@@ -117,11 +98,11 @@ class Guide extends React.Component<Record<string, never>> {
         {skipCallback: true},
       );
     } else {
-    // Make sure we don't try and dismiss a guide if it's
-    // not modal.
+      // Make sure we don't try and dismiss a guide if it's
+      // not modal.
       if (currentGuide && !currentGuide.noDimBackground) {
-    // This click did not start text to speech, so attempt
-    // to dismiss the guide.
+        // This click did not start text to speech, so attempt
+        // to dismiss the guide.
         const dismissed = guide.dismissCurrentGuide();
         if (dismissed) {
           if (state.textToSpeechLocale) {
@@ -133,9 +114,9 @@ class Guide extends React.Component<Record<string, never>> {
     }
   };
 
-    // Called from both the guide click handler and the render method, and
-    // attempts to play text to speech if needed.  Returns true if it believes
-    // it started text to speech.
+  // Called from both the guide click handler and the render method, and
+  // attempts to play text to speech if needed.  Returns true if it believes
+  // it started text to speech.
   attemptTextToSpeechTextToSpeech = (inClickHandler: boolean): boolean => {
     const state = getState();
     const currentGuide = guide.getCurrentGuide();
@@ -200,7 +181,7 @@ class Guide extends React.Component<Record<string, never>> {
     }
 
     if (this.attemptTextToSpeechTextToSpeech(false)) {
-    // This call started text to speech.
+      // This call started text to speech.
       setState({textToSpeechCurrentGuide: currentGuide}, {skipCallback: true});
     }
 
@@ -261,15 +242,14 @@ class Guide extends React.Component<Record<string, never>> {
 
                   {/* Visible Typist animation for sighted users */}
                   <div className="ocean-guide__typing-text" aria-hidden="true">
-                    <GuideTypist
+                    <Typist
                       avgTypingDelay={35}
                       stdTypingDelay={15}
-                      delayGenerator={() => (this.fastTyping ? 5 : 35)}
                       cursor={{show: false}}
                       onTypingDone={this.onTypingDone}
                     >
                       {currentGuide.textFn(getState())}
-                    </GuideTypist>
+                    </Typist>
                   </div>
 
                   <div
